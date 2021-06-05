@@ -1,14 +1,3 @@
-#from Bio import SeqIO
-
-#def reheader_evigene(okay_tr):
-    #with open(okay_tr, 'r') as inputf, open(f"{okay_tr}.reheader", 'w') as outputf:
-        #records = SeqIO.parse(inputf, 'fasta')
-        #for record in records:
-            #reheader = record.description.split(' ')[0]
-            #record.id = reheader
-            #record.description =''
-            #SeqIO.write(record, outputf, 'fasta')
-
 #def get_cds_file_input(wildcards):
     #return config["cds"][wildcards.species]
 
@@ -41,11 +30,11 @@ rule EDTA:
         "{species}/{species}_EDTA.log"
     threads: 20
     run:
-        shell("source ~/.bashrc && conda activate EDTA-env")
+        shell("set +eu && PS1=dummy && . $(conda info --base)/etc/profile.d/conda.sh && conda activate EDTA-env")
         shell("EDTA.pl --genome {input.path} --cds {params.cds} --sensitive 1 --anno 1 "
         "--evaluate 1 --species others -t {threads} 2> {log}")
         shell("mv polish.fasta* {wildcards.species}/EDTA")                       #modify with purged final assembly
-        shell("conda deactivate")
+        shell("set +eu && PS1=dummy && . $(conda info --base)/etc/profile.d/conda.sh && conda deactivate")
 
 rule RepeatMasker: #Use repeat library constructed from EDTA
     input:
@@ -55,10 +44,10 @@ rule RepeatMasker: #Use repeat library constructed from EDTA
         "{species}/softmasked/polish.fasta.masked"
     threads: 4
     run:
-        shell("source ~/.bashrc && conda activate EDTA-env")
+        shell("set +eu && PS1=dummy && . $(conda info --base)/etc/profile.d/conda.sh && conda activate EDTA-env")
         shell("RepeatMasker -s -xsmall -engine ncbi -lib {input.lib} "
         "-pa {threads} -dir {wildcards.species}/softmasked {input.path}")
-        shell("conda deactivate")
+        shell("set +eu && PS1=dummy && . $(conda info --base)/etc/profile.d/conda.sh && conda deactivate")
 
 rule BRAKER2: #Reference fungal protein sequences from OrthoDB
     input:
@@ -68,8 +57,8 @@ rule BRAKER2: #Reference fungal protein sequences from OrthoDB
         "{species}/BRAKER2/braker.gtf"
     threads: 22
     run:
-        shell("source ~/.bashrc && conda activate braker-env")
+        shell("set +eu && PS1=dummy && . $(conda info --base)/etc/profile.d/conda.sh && conda activate braker-env")
         shell("braker.pl --species={wildcards.species} --genome={input.path} "
         "--prot_seq={input.proteins} --softmasking --epmode --fungus "
         "--cores {threads} --workingdir={wildcards.species}/BRAKER2")
-        shell("conda deactivate")
+        shell("set +eu && PS1=dummy && . $(conda info --base)/etc/profile.d/conda.sh && conda deactivate")
